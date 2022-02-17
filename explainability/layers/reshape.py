@@ -22,6 +22,5 @@ class ReshapeLRP(LRPLayer):
         a, R = inputs
 
         shape = [x if x != None else -1 for x in a.shape]
-        print(f'Shape: {shape}')
 
         return tf.reshape(R, shape, name=self.name)

@@ -41,3 +41,41 @@ def test_conv2d_lrp():
 
     assert np.allclose(expected, explanations, 1e-2), \
         'Conv2DLRP does not return the correct explanations'
+
+
+def test_conv2d_alpha_beta():
+    input = Input((3, 3, 1))
+    layer = Conv2D(1, (3, 3), use_bias=False, padding='VALID')
+    x = layer(input)
+    model = Model(input, x)
+    weights = np.asarray([
+        [[[1]], [[1]], [[1]]],
+        [[[-1]], [[1]], [[-1]]],
+        [[[1]], [[-1]], [[1]]]
+    ]).astype(np.float32)
+
+    layer.set_weights([np.asarray(weights)])
+
+    l = Conv2DLRP(
+        model.layers[1],
+        alpha=2,
+        beta=1
+    )([input, np.ones((1, 1, 1, 1)) * 6])
+    explainer = Model(input, l)
+
+    input = np.reshape(np.arange(9), (1, 3, 3, 1))
+
+    explanations = explainer(input)
+
+    expected = np.asarray([
+        [
+            [
+                [[0.000], [0.571], [1.142]],
+                [[-1.200], [2.285], [-2.000]],
+                [[3.428], [-2.800], [4.579]]
+            ]
+        ]
+    ])
+
+    assert np.allclose(expected, explanations, 1e-2), \
+        'Conv2D with alpha/beta does not return the correct explanations'

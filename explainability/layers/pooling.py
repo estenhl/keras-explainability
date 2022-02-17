@@ -18,7 +18,7 @@ class MaxPoolingLRP(LRPLayer):
         WINNER_TAKE_ALL = 'winner-take-all'
         REDISTRIBUTE = 'redistribute'
 
-    def __init__(self, layer, *args, strategy: str = 'redistribute',
+    def __init__(self, layer, *args, strategy: str = 'winner-take-all',
                  name: str = 'max_pooling_lrp', **kwargs):
         assert isinstance(layer, (GlobalMaxPooling2D, MaxPooling2D)), \
             ('MaxPoolingLRP should only be called with '

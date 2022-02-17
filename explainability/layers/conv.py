@@ -21,6 +21,29 @@ class Conv2DLRP(LRPLayer):
                                       strides=self.layer.strides,
                                       padding=self.layer.padding.upper())
 
+    def _compute_with_alpha_beta(self, a, w, R) -> tf.Tensor:
+        padding = self.layer.padding.upper()
+        z = tf.nn.conv2d(a, w, padding=padding, strides=(1, 1))
+        zpos = tf.nn.conv2d(a, tf.maximum(0., w), padding=padding, strides=(1, 1))
+        zneg = tf.nn.conv2d(a, tf.minimum(0., w), padding=padding, strides=(1, 1))
+
+        Rpos = R / (zpos + 1e-9)
+        Rneg = R / (zneg + 1e-9)
+        z = tf.add(z, 1e-9)
+
+        cpos = tf.nn.conv2d_transpose(Rpos, tf.maximum(0., w), output_shape=a.shape[1:-1],
+                                    strides=(1, 1, 1, 1),
+                                    padding=padding)
+
+        cneg = tf.nn.conv2d_transpose(Rneg, tf.minimum(0., w), output_shape=a.shape[1:-1],
+                           strides=(1, 1, 1, 1),
+                           padding=padding)
+
+        c = self.alpha * cpos - self.beta * cneg
+        R = tf.multiply(a, c)
+
+        return R
+
 
 class Conv3DLRP(LRPLayer):
     def __init__(self, layer, *args, name: str = 'conv3d_lrp', **kwargs):

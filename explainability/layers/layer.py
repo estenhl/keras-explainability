@@ -14,39 +14,55 @@ class LRPLayer(Layer, ABC):
         pass
 
     def __init__(self, layer, *, epsilon: float = None, gamma: float = None,
-                 name='dense_lrp'):
+                 alpha: float = None, beta: float = None, name='dense_lrp'):
         super().__init__(trainable=False, name=name)
 
-        assert not (epsilon is not None and gamma is not None), \
+        assert epsilon is None or gamma is None, \
             'DenseLRP should not be used with both epsilon and gamma'
+        assert epsilon is None or (alpha is None and beta is None), \
+            'DenseLRP should not be used with both epsilon and alpha/beta'
+        assert gamma is None or (alpha is None and beta is None), \
+            'DenseLRP should not be used with both gamma and alpha/beta'
+        assert alpha is None and beta is None or \
+               alpha is not None and beta is not None, \
+            'If alpha or beta is used, they should both be used'
 
-        #if hasattr(layer, 'use_bias') and layer.use_bias:
-        #    raise NotImplementedError(('LRP for Dense layers with bias is not '
-        #                               'implemented'))
+        if alpha is not None:
+            assert alpha == beta + 1, \
+                'beta must be equal to alpha + 1'
 
         self.layer = layer
         self.epsilon = epsilon
         self.gamma = gamma
+        self.alpha = alpha
+        self.beta = beta
 
     def compute_output_shape(self, input_shape):
         return self.layer.input_shape
 
     def call(self, inputs: List[tf.Tensor]) -> tf.Tensor:
         a, R = inputs
+
         w = self.layer.weights[0]
 
         if self.gamma:
             w = tf.where(w >= 0, tf.multiply(w, 1 + self.gamma), w)
 
-        z = self.forward(a, w)
-        s = R / z
+        if self.alpha is not None and self.beta is not None:
+            return self._compute_with_alpha_beta(a, w, R)
+        else:
+            z = self.forward(a, w)
+            z = tf.add(z, 1e-9)
 
-        if self.epsilon:
-            z = tf.add(z, self.epsilon)
+            if self.epsilon:
+                z = tf.add(z, self.epsilon)
 
-        s = R / z
+            if self.layer.use_bias:
+                R = (R * z) / (z + self.layer.bias)
 
-        c = self.backward(w, s)
-        R = tf.multiply(a, c)
+            s = R / z
+
+            c = self.backward(w, s)
+            R = tf.multiply(a, c)
 
         return R
