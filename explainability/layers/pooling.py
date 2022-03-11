@@ -4,9 +4,9 @@ from enum import Enum
 from tensorflow.keras.layers import AveragePooling2D, AveragePooling3D, \
                                     GlobalAveragePooling2D, \
                                     GlobalAveragePooling3D, \
-                                    GlobalMaxPooling2D, \
-                                    GlobalMaxPooling3D, MaxPooling2D
-from tensorflow.raw_ops import AvgPool3DGrad, AvgPoolGrad, MaxPoolGradV2
+                                    GlobalMaxPooling2D, GlobalMaxPooling3D, \
+                                    MaxPooling2D, MaxPooling3D
+from tensorflow.raw_ops import AvgPool3DGrad, AvgPoolGrad, MaxPoolGradV2, MaxPool3DGrad
 
 from typing import List
 
@@ -20,7 +20,8 @@ class MaxPoolingLRP(LRPLayer):
 
     def __init__(self, layer, *args, strategy: str = 'winner-take-all',
                  name: str = 'max_pooling_lrp', **kwargs):
-        assert isinstance(layer, (GlobalMaxPooling2D, MaxPooling2D)), \
+        assert isinstance(layer, (GlobalMaxPooling2D, GlobalMaxPooling3D,
+                                  MaxPooling2D, MaxPooling3D)), \
             ('MaxPoolingLRP should only be called with '
              'MaxPooling2D, GlobalMaxPooling2D layers')
 
@@ -43,13 +44,13 @@ class MaxPoolingLRP(LRPLayer):
         a, R = inputs
 
         ksize = self.layer.pool_size \
-                if isinstance(self.layer, MaxPooling2D) \
+                if isinstance(self.layer, (MaxPooling2D, MaxPooling3D)) \
                 else a.shape[1:-1]
         strides = self.layer.strides \
-                  if isinstance(self.layer, MaxPooling2D) \
+                  if isinstance(self.layer, (MaxPooling2D, MaxPooling3D)) \
                   else tuple([1] * (len(a.shape) - 2))
         padding = self.layer.padding.upper() \
-                  if isinstance(self.layer, MaxPooling2D) \
+                  if isinstance(self.layer, (MaxPooling2D, MaxPooling3D)) \
                   else 'VALID'
 
         forward = tf.nn.max_pool(a, ksize=ksize, strides=strides,
@@ -65,9 +66,14 @@ class MaxPoolingLRP(LRPLayer):
 
             R = tf.reshape(R, dims, name=f'{self.name}/R/reshape')
 
-        gradients = MaxPoolGradV2(orig_input=a, orig_output=forward,
-                                  grad=R, ksize=ksize, strides=strides, padding=padding,
-                                  data_format='NHWC')
+        if len(a.shape) == 4:
+            gradients = MaxPoolGradV2(orig_input=a, orig_output=forward,
+                                      grad=R, ksize=ksize, strides=strides, padding=padding,
+                                      data_format='NHWC')
+        elif len(a.shape) == 5:
+            gradients = MaxPool3DGrad(orig_input=a, orig_output=forward,
+                                      grad=R, ksize=ksize, strides=strides, padding=padding,
+                                      data_format='NDHWC')
 
         return gradients
 

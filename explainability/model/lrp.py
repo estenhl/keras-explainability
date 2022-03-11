@@ -23,6 +23,8 @@ class LayerwiseRelevancePropagator(Model):
                          activations[-1], tf.zeros_like(activations[-1]))
 
         for i in range(len(model.layers)-1, 0, -1):
+            input = activations[i-1] if i > 1 \
+                    else tf.ones_like(activations[i-1])
             prev = LRP(
                 model.layers[i],
                 epsilon=epsilon,

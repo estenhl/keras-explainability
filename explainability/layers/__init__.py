@@ -4,7 +4,7 @@ from tensorflow.keras.layers import Activation, AveragePooling2D, \
                                     GlobalAveragePooling2D, \
                                     GlobalAveragePooling3D, \
                                     GlobalMaxPooling3D, MaxPooling2D, \
-                                    Reshape, ReLU
+                                    MaxPooling3D, Reshape, ReLU
 
 from .activations import ReLULRP
 from .conv import Conv2DLRP, Conv3DLRP
@@ -24,7 +24,7 @@ def LRP(layer, *args, **kwargs):
     elif isinstance(layer, AveragePooling3D):
         return AveragePoolingLRP(layer, *args, **kwargs)
     elif isinstance(layer, BatchNormalization):
-        return BatchNormalizationLRP(layer, *args, **kwargs)
+        return NoOpLRP(layer, *args, **kwargs)#BatchNormalizationLRP(layer, *args, **kwargs)
     elif isinstance(layer, Conv2D):
         return Conv2DLRP(layer, *args, **kwargs)
     elif isinstance(layer, Conv3D):
@@ -41,7 +41,7 @@ def LRP(layer, *args, **kwargs):
         return MaxPoolingLRP(layer, *args, **kwargs)
     elif isinstance(layer, Flatten):
         return ReshapeLRP(layer, *args, **kwargs)
-    elif isinstance(layer, MaxPooling2D):
+    elif isinstance(layer, (MaxPooling2D, MaxPooling3D)):
         return MaxPoolingLRP(layer, *args, **kwargs)
     elif isinstance(layer, Reshape):
         return ReshapeLRP(layer, *args, **kwargs)

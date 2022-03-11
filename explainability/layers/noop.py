@@ -7,7 +7,7 @@ from .layer import LRPLayer
 
 class NoOpLRP(LRPLayer):
     def __init__(self, *args, **kwargs):
-        super().__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def forward(self, a, w):
         raise NotImplementedError()
