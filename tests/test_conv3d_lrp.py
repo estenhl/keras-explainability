@@ -6,7 +6,7 @@ from tensorflow.keras import Model
 from tensorflow.keras.layers import Conv3D, Flatten, Input
 
 from explainability import LayerwiseRelevancePropagator
-"""
+
 def test_conv3d_lrp():
     input = Input((4, 4, 4, 1))
     x = Conv3D(2, (3, 3, 3), activation=None, padding='SAME')(input)
@@ -113,7 +113,7 @@ def test_conv3d_lrp_alpha_1_beta_0():
     assert np.isclose(48.23077, explanations[0,1,0,1,0], 1e-5), \
         'Conv3D with alpha=1, beta=0 returns the wrong explanations'
     assert np.isclose(78.39367, explanations[0,1,1,1,0], 1e-5), \
-        'Conv3D with alpha=1, beta=0 returns the wrong explanations'"""
+        'Conv3D with alpha=1, beta=0 returns the wrong explanations'
 
 def test_conv3d_lrp_alpha_2_beta_1():
     input = Input((4, 4, 4, 1))

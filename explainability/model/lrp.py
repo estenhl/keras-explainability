@@ -4,6 +4,7 @@ from tensorflow.keras import Model
 
 from typing import Union
 
+from .utils import remove_softmax
 from ..layers import LRP
 
 
@@ -11,6 +12,8 @@ class LayerwiseRelevancePropagator(Model):
     def __init__(self, model: Model, *, epsilon: float = None,
                  gamma: float = None, alpha: float = None, beta: float = None,
                  layer: Union[int, str], idx: int):
+        model = remove_softmax(model)
+
         if idx < 0:
             raise NotImplementedError(('Negative indexing for layers not '
                                        'implemented'))
