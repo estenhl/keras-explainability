@@ -43,7 +43,7 @@ def test_conv2d_lrp():
         'Conv2DLRP does not return the correct explanations'
 
 
-def test_conv2d_alpha_beta():
+def test_conv2d_alpha_2_beta_1():
     input = Input((3, 3, 1))
     layer = Conv2D(1, (3, 3), use_bias=False, padding='VALID')
     x = layer(input)
@@ -76,6 +76,9 @@ def test_conv2d_alpha_beta():
             ]
         ]
     ])
+
+    print(expected)
+    print(explanations)
 
     assert np.allclose(expected, explanations, 1e-2), \
         'Conv2D with alpha/beta does not return the correct explanations'

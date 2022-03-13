@@ -19,8 +19,6 @@ class LRPLayer(Layer, ABC):
 
         assert epsilon is None or gamma is None, \
             'DenseLRP should not be used with both epsilon and gamma'
-        assert epsilon is None or (alpha is None and beta is None), \
-            'DenseLRP should not be used with both epsilon and alpha/beta'
         assert gamma is None or (alpha is None and beta is None), \
             'DenseLRP should not be used with both gamma and alpha/beta'
         assert alpha is None and beta is None or \
