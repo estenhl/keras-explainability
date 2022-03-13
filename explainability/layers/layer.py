@@ -5,6 +5,12 @@ from tensorflow.keras.layers import Dense, Layer
 from typing import List
 
 class LRPLayer(Layer, ABC):
+    def __init__(self, layer: tf.Tensor, name: str = 'lrp', **kwargs):
+        super().__init__(trainable=False, name=name)
+
+        self.layer = layer
+
+class StandardLRPLayer(LRPLayer, ABC):
     @abstractmethod
     def forward(a: tf.Tensor, w: tf.Tensor) -> tf.Tensor:
         pass
@@ -13,9 +19,12 @@ class LRPLayer(Layer, ABC):
     def backward(w: tf.Tensor, s: tf.Tensor) -> tf.Tensor:
         pass
 
-    def __init__(self, layer, *, epsilon: float = None, gamma: float = None,
-                 alpha: float = None, beta: float = None, name='dense_lrp'):
-        super().__init__(trainable=False, name=name)
+    def __init__(self, layer: tf.Tensor, *, epsilon: float = None,
+                 gamma: float = None, alpha: float = None, beta: float = None,
+                 name: str = 'dense_lrp'):
+        super().__init__(layer, name=name)
+
+        print('Standard')
 
         assert epsilon is None or gamma is None, \
             'DenseLRP should not be used with both epsilon and gamma'

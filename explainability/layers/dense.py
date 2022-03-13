@@ -2,9 +2,9 @@ import tensorflow as tf
 
 from tensorflow.keras.layers import Dense
 
-from .layer import LRPLayer
+from .layer import StandardLRPLayer
 
-class DenseLRP(LRPLayer):
+class DenseLRP(StandardLRPLayer):
     @staticmethod
     def forward(a: tf.Tensor, w: tf.Tensor) -> tf.Tensor:
         x = tf.tensordot(a, w, axes=1)

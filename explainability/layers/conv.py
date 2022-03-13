@@ -4,10 +4,10 @@ import tensorflow as tf
 from tensorflow.keras.layers import Conv2D, Conv3D
 from typing import Callable, Tuple
 
-from .layer import LRPLayer
+from .layer import StandardLRPLayer
 
 
-class ConvLRP(LRPLayer):
+class ConvLRP(StandardLRPLayer):
     @abstractproperty
     def convolve(self) -> Callable:
         pass
@@ -109,5 +109,8 @@ class Conv3DLRP(ConvLRP):
     def __init__(self, layer, *args, name: str = 'conv3d_lrp', **kwargs):
         assert isinstance(layer, Conv3D), \
             'Conv2DLRP should only be called with a Conv3D layer'
+
+        print(Conv3D)
+        print(super())
 
         super().__init__(layer, *args, name=name, **kwargs)

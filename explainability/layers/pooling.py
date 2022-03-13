@@ -29,12 +29,6 @@ class MaxPoolingLRP(LRPLayer):
 
         self.strategy = MaxPoolingLRP.Strategy(strategy)
 
-    def forward(self, a, w):
-        raise NotImplementedError()
-
-    def backward(self, w: tf.Tensor, s: tf.Tensor) -> tf.Tensor:
-        raise NotImplementedError()
-
     def call(self, inputs: List[tf.Tensor]) -> tf.Tensor:
         if self.strategy != MaxPoolingLRP.Strategy.WINNER_TAKE_ALL:
             raise NotImplementedError(('Only winner-take-all strategy is '
@@ -149,11 +143,6 @@ class AveragePoolingLRP(LRPLayer):
         tf.ensure_shape(a, expected_shape)
 
         z = self.forward(a)
-        s = R / z
-
-        if self.epsilon:
-            z = tf.add(z, self.epsilon)
-
         s = R / z
 
         c = self.backward(a, s)

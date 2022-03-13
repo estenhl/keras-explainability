@@ -14,12 +14,6 @@ class BatchNormalizationLRP(LRPLayer):
 
         super().__init__(layer, *args, name=name, **kwargs)
 
-    def forward(self, a, w):
-        raise NotImplementedError()
-
-    def backward(self, w: tf.Tensor, s: tf.Tensor) -> tf.Tensor:
-        raise NotImplementedError()
-
     def call(self, inputs: List[tf.Tensor]) -> tf.Tensor:
         a, R = inputs
 
