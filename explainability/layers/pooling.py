@@ -57,17 +57,26 @@ class MaxPoolingLRP(LRPLayer):
         if len(R.shape) != len(a.shape):
             extra_dims = len(a.shape) - len(R.shape)
             dims = [R.shape[0]] + [1] * extra_dims + [R.shape[-1]]
+            dims = [dim if dim is not None else -1 for dim in dims]
 
             R = tf.reshape(R, dims, name=f'{self.name}/R/reshape')
 
         if len(a.shape) == 4:
             gradients = MaxPoolGradV2(orig_input=a, orig_output=forward,
-                                      grad=R, ksize=ksize, strides=strides, padding=padding,
-                                      data_format='NHWC')
-        elif len(a.shape) == 5:
+                                      grad=R, ksize=ksize, strides=strides,
+                                      padding=padding, data_format='NHWC')
+        elif isinstance(self.layer, GlobalMaxPooling3D):
             gradients = MaxPool3DGrad(orig_input=a, orig_output=forward,
-                                      grad=R, ksize=ksize, strides=strides, padding=padding,
+                                      grad=R, ksize=ksize.as_list(),
+                                      strides=strides, padding=padding,
                                       data_format='NDHWC')
+        elif isinstance(self.layer, MaxPooling3D):
+            gradients = MaxPool3DGrad(orig_input=a, orig_output=forward,
+                                      grad=R, ksize=ksize,
+                                      strides=strides, padding=padding,
+                                      data_format='NDHWC')
+        else:
+            raise ValueError(f'Unable to handle layer {self.layer}')
 
         return gradients
 

@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 from abc import ABC, abstractmethod
-from tensorflow.keras.layers import Dense, Layer
+from tensorflow.keras.layers import Layer
 from typing import List
 
 class LRPLayer(Layer, ABC):
@@ -23,8 +23,6 @@ class StandardLRPLayer(LRPLayer, ABC):
                  gamma: float = None, alpha: float = None, beta: float = None,
                  name: str = 'dense_lrp'):
         super().__init__(layer, name=name)
-
-        print('Standard')
 
         assert epsilon is None or gamma is None, \
             'DenseLRP should not be used with both epsilon and gamma'

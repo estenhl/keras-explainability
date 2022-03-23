@@ -1,1 +1,1 @@
-from .lrp import LayerwiseRelevancePropagator
+from .lrp import LayerwiseRelevancePropagator, LRP

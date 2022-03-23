@@ -1,1 +1,2 @@
-from .model import LayerwiseRelevancePropagator
+from .model import LayerwiseRelevancePropagator, LRP
+from .utils.strategies import LRPStrategy
