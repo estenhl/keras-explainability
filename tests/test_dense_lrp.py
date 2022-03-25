@@ -144,7 +144,7 @@ def test_dense_lrp_model_with_bias():
     explainer = LayerwiseRelevancePropagator(model, layer=2, idx=0)
     explanations = explainer(np.asarray([[2., 3.]], dtype=np.float32))
 
-    assert np.array_equal(explanations, [[52., 114.]]), \
+    assert np.allclose(explanations, [[60.21154, 131.78847]], atol=1e-5), \
         ('Two default DenseLRPs in a LRP-wrapper does not return the '
          'correct explanations')
 
@@ -213,3 +213,27 @@ def test_dense_alpha_1_beta_0_model():
     assert np.array_equal([[1, 0, 3]], explanations), \
         'DenseLRP does not handle alpha/beta'
 
+def test_dense_lrp_b():
+    input = Input((3,))
+    x = Dense(1, activation=None)(input)
+    model = Model(input, x)
+    model.layers[1].set_weights([
+        np.asarray([[1], [2], [3]]),
+        np.zeros(1)
+    ])
+
+    explainer = DenseLRP(model.layers[1])
+    explanations = explainer([np.asarray([[1., 2., 3.]]),
+                              np.asarray([14.])])[0].numpy()
+
+    assert np.array_equal([1., 4., 9.], explanations), \
+        'Default DenseLRP returns the wrong explanations'
+
+    explainer = DenseLRP(model.layers[1], b=True)
+    explanations = explainer([np.asarray([[1., 2., 3.]]),
+                              np.asarray([14.])])[0].numpy()
+
+    expected = np.asarray([14./6, (14.*2)/6, (14.*3)/6])
+
+    assert np.allclose(expected, explanations, atol=1e-8), \
+        'DenseLRP with b=True returns the wrong explanations'

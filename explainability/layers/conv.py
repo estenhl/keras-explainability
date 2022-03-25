@@ -108,6 +108,6 @@ class Conv3DLRP(ConvLRP):
 
     def __init__(self, layer, *args, name: str = 'conv3d_lrp', **kwargs):
         assert isinstance(layer, Conv3D), \
-            'Conv2DLRP should only be called with a Conv3D layer'
+            'Conv3DLRP should only be called with a Conv3D layer'
 
         super().__init__(layer, *args, name=name, **kwargs)
