@@ -77,8 +77,42 @@ def test_conv2d_alpha_2_beta_1():
         ]
     ])
 
-    print(expected)
-    print(explanations)
-
     assert np.allclose(expected, explanations, 1e-2), \
         'Conv2D with alpha/beta does not return the correct explanations'
+
+def test_conv2d_flat():
+    input = Input((4, 4, 1))
+    x = Conv2D(1, (3, 3), activation=None, padding='SAME')(input)
+    model = Model(input, x)
+
+    model.layers[-1].set_weights([
+        np.asarray([
+            [[[-1.]], [[1.]], [[-1.]]],
+            [[[1.]], [[-1.]], [[1.]]],
+            [[[-1.]], [[1.]], [[-1.]]]
+        ]),
+        np.zeros(1)
+    ])
+
+    data = np.asarray([
+        [-5., 4., -3., 2.],
+        [-1., 0., 1., -2.],
+        [3., -4., 5., -6.],
+        [7., -8., 9., -10.]
+    ]).reshape((1, 4, 4, 1))
+
+    R = np.asarray([
+        [-1., 2., 3., 4.],
+        [5., 0., 7., 8.],
+        [9., 10., -11., 12.],
+        [13., 14., 15., -16.]
+    ]).reshape((1, 4, 4, 1))
+
+    explainer = Conv2DLRP(model.layers[-1], flat=True)
+    explanations = explainer([data, R]).numpy()
+
+    assert np.allclose(0.9166666, explanations[0,0,0,0], atol=1e-5), \
+        'Conv2DLRP with flat=True does not return the correct explanations'
+    assert np.allclose(4.833333, explanations[0,2,2,0], atol=1e-5), \
+        'Conv2DLRP with flat=True does not return the correct explanations'
+

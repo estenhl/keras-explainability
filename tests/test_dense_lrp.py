@@ -79,7 +79,7 @@ def test_dense_lrp_epsilon():
     model = Model(input, layer(input))
 
     relevances = np.asarray([[24., 52., 90.]], dtype=np.float32)
-    l = DenseLRP(model.layers[1], epsilon=1)([input, relevances])
+    l = DenseLRP(model.layers[1], epsilon=1.)([input, relevances])
 
     explainer = Model(input, l)
     explanations = explainer(np.asarray([[2., 3.]], dtype=np.float32))
@@ -126,27 +126,6 @@ def test_dense_lrp_epsilon_and_gamma():
     assert exception, \
         ('Instantiating a DenseLRP-layer with both epsilon and gamma does not '
          'raise an exception')
-
-def test_dense_lrp_model_with_bias():
-    """Tests that a model comprised of only dense layers with biases
-    returns the expected result
-    """
-    input = Input((2,))
-    first = Dense(3,
-        kernel_initializer=Constant(value=[[1., 2., 3.], [2., 3., 4.]]),
-        bias_initializer=Constant(value=[1., 2., 3.])
-    )(input)
-    second = Dense(1,
-        kernel_initializer=Constant(value=[[3.], [4.], [5.]])
-    )(first)
-    model = Model(input, second)
-
-    explainer = LayerwiseRelevancePropagator(model, layer=2, idx=0)
-    explanations = explainer(np.asarray([[2., 3.]], dtype=np.float32))
-
-    assert np.allclose(explanations, [[60.21154, 131.78847]], atol=1e-5), \
-        ('Two default DenseLRPs in a LRP-wrapper does not return the '
-         'correct explanations')
 
 def test_dense_lrp_relu():
     input = Input((3,))
@@ -237,3 +216,32 @@ def test_dense_lrp_b():
 
     assert np.allclose(expected, explanations, atol=1e-8), \
         'DenseLRP with b=True returns the wrong explanations'
+
+
+def test_dense_flat():
+    inputs = Input((4,))
+    x = Dense(2, activation=None)(inputs)
+    model = Model(inputs, x)
+
+    model.layers[1].set_weights([
+        np.asarray([[-1, 0], [1, 2], [3, 4], [5, 6]]),
+        np.zeros(2)
+    ])
+
+    explainer = DenseLRP(model.layers[-1])
+    explanations = explainer([np.asarray([[1., 2., 3., 4.]]),
+                              np.asarray([[10., 20.]])]).numpy()
+
+    expected = np.asarray([[-1/3, 8/3, 9, 56/3]])
+
+    assert np.allclose(expected, explanations, atol=1e-5), \
+        'Default DenseLRP returns the wrong explanations'
+
+    explainer = DenseLRP(model.layers[-1], flat=True)
+    explanations = explainer([np.asarray([[1., 2., 3., 4.]]),
+                              np.asarray([[10., 20.]])]).numpy()
+
+    expected = np.ones((1, 4)) * 30/4
+
+    assert np.allclose(expected, explanations, atol=1e-5), \
+        'DenseLRP with flat=True returns the wrong explanations'

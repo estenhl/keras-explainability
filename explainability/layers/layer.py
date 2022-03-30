@@ -21,7 +21,7 @@ class StandardLRPLayer(LRPLayer, ABC):
 
     def __init__(self, layer: tf.Tensor, *, epsilon: float = None,
                  gamma: float = None, alpha: float = None, beta: float = None,
-                 b: bool = False, name: str = 'dense_lrp'):
+                 b: bool = False, flat: bool = False, name: str = 'dense_lrp'):
         super().__init__(layer, name=name)
 
         if epsilon is not None:
@@ -47,6 +47,7 @@ class StandardLRPLayer(LRPLayer, ABC):
         self.alpha = alpha
         self.beta = beta
         self.b = b
+        self.flat = flat
 
     def compute_output_shape(self, input_shape):
         return self.layer.input_shape
@@ -58,6 +59,10 @@ class StandardLRPLayer(LRPLayer, ABC):
             a = tf.ones_like(a)
 
         w = self.layer.weights[0]
+
+        if self.flat:
+            a = tf.ones_like(a)
+            w = tf.ones_like(w)
 
         if self.gamma:
             w = tf.where(w >= 0, tf.multiply(w, 1 + self.gamma), w)
