@@ -38,16 +38,48 @@ def test_non_sequential_model():
         np.arange(-2, 3, dtype=np.float32).reshape((1, 5))
     ])
 
-    print(explanations)
-
-    for i in range(len(explainer.layers)):
-        print(f'{i}: {explainer.layers[i]}')
-
-    m = Model(explainer.input, explainer.layers[12].output)
-    print(m([
-        np.arange(1, 6, dtype=np.float32).reshape((1, 5)),
-        np.arange(-2, 3, dtype=np.float32).reshape((1, 5))
-    ]))
-
     expected = np.asarray([[0., 4., 9., 16., 25.]])
+
+    assert np.array_equal(expected, explanations[0]), \
+        ('LRP with non-sequential model does not return the correct '
+         'explanations')
+
+def test_lrp_negative_layer():
+    i = Input((3,))
+    x = Dense(3)(i)
+    x = Dense(1)(x)
+    model = Model(i, x)
+
+    lrp = LRP(model, layer=-1, idx=0)
+    dense_layers = [l for l in lrp.layers if isinstance(l, Dense)]
+
+    assert 2 == len(dense_layers), \
+        ('Indexing an LRP with -1 does not provide explanations for the last '
+         'layer')
+
+def test_lrp_not_last_layer():
+    i = Input((3,))
+    x = Dense(3)(i)
+    x = Dense(3)(x)
+    model = Model(i, x)
+
+    model.layers[1].set_weights([
+        np.asarray([[0, 0, 1], [0, 1, 0], [1, 0, 0]]),
+        np.zeros(3)
+    ])
+    model.layers[2].set_weights([
+        np.ones((3, 3)),
+        np.zeros(3)
+    ])
+
+    data = np.asarray([[1, 2, 3]])
+
+    lrp = LRP(model, layer=1, idx=0)
+    explanations = lrp.predict(data)
+
+    assert np.array_equal(np.asarray([[0., 0., 3.]]), explanations), \
+        ('LRP which does not target the last layer does not return the '
+         'correct explanations')
+
+
 

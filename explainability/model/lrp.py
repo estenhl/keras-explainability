@@ -1,5 +1,4 @@
 import tensorflow as tf
-from explainability.layers.layer import StandardLRPLayer
 
 from tensorflow.keras import Model
 
@@ -15,13 +14,10 @@ class LayerwiseRelevancePropagator(Model):
     def __init__(self, model: Model, *, layer: Union[int, str], idx: int,
                  epsilon: float = None, gamma: float = None,
                  alpha: float = None, beta: float = None,
-                 ignore_input: bool = False, strategy: LRPStrategy = None,
-                 name: str = 'LRP'):
-        model = remove_softmax(model)
+                 strategy: LRPStrategy = None, name: str = 'LRP'):
 
-        if idx < 0:
-            raise NotImplementedError(('Negative indexing for layers not '
-                                       'implemented'))
+        model = Model(model.input, model.layers[layer].output)
+        model = remove_softmax(model)
 
         if strategy is not None:
             assert epsilon is None, \
