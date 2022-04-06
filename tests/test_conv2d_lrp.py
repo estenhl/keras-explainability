@@ -42,41 +42,6 @@ def test_conv2d_lrp():
     assert np.allclose(expected, explanations, 1e-2), \
         'Conv2DLRP does not return the correct explanations'
 
-
-def test_conv2d_alpha_2_beta_1():
-    input = Input((3, 3, 1))
-    layer = Conv2D(1, (3, 3), use_bias=False, padding='VALID')
-    x = layer(input)
-    model = Model(input, x)
-    weights = np.asarray([
-        [[[1]], [[1]], [[1]]],
-        [[[-1]], [[1]], [[-1]]],
-        [[[1]], [[-1]], [[1]]]
-    ]).astype(np.float32)
-
-    layer.set_weights([np.asarray(weights)])
-
-    l = Conv2DLRP(
-        model.layers[1],
-        alpha=2,
-        beta=1
-    )([input, np.ones((1, 1, 1, 1)) * 6])
-    explainer = Model(input, l)
-
-    input = np.reshape(np.arange(9), (1, 3, 3, 1))
-
-    explanations = explainer(input)
-
-    expected = np.asarray([
-        [
-            [
-                [[0.000], [0.571], [1.142]],
-                [[-1.200], [2.285], [-2.000]],
-                [[3.428], [-2.800], [4.579]]
-            ]
-        ]
-    ])
-
     assert np.allclose(expected, explanations, 1e-2), \
         'Conv2D with alpha/beta does not return the correct explanations'
 
@@ -116,3 +81,68 @@ def test_conv2d_flat():
     assert np.allclose(4.833333, explanations[0,2,2,0], atol=1e-5), \
         'Conv2DLRP with flat=True does not return the correct explanations'
 
+def test_conv2d_alpha_1_beta_0():
+    input = Input((4, 4, 1))
+    x = Conv2D(1, (3, 3), padding='VALID')(input)
+    model = Model(input, x)
+
+    weights = np.asarray([1 if i % 2 == 0 else -1 for i in range(9)])
+    weights = np.reshape(weights, (3, 3, 1, 1))
+
+    model.layers[-1].set_weights([
+        weights,
+        np.zeros(1)
+    ])
+
+    data = np.asarray([x if x < 8 else -x for x in np.arange(16)])
+    data = data.astype(np.float32)
+    data = np.reshape(data, (1, 4, 4, 1))
+
+    explainer = Conv2DLRP(model.layers[-1], alpha=1, beta=0)
+    R = np.asarray([[1.0, 2.0, 3.0, 4.0]])
+    R = np.reshape(R, (2, 2, 1))
+    explanations = explainer([data, R])
+
+    expected = np.asarray([
+        [0, 2/20, 2/16, 6/20],
+        [12/41, 5/16+20/46, 12/20+18/41, 28/46],
+        [24/41, 9/16+36/46, 1+30/41, 44/46],
+        [0, 39/41, 56/46, 0]
+    ])
+    expected = np.reshape(expected, (1, 4, 4, 1))
+
+    assert np.allclose(expected, explanations, atol=1e-5), \
+        'Conv2D with alpha=1, beta=0 does not return the correct explanations'
+
+def test_conv2d_alpha_2_beta_1():
+    input = Input((4, 4, 1))
+    x = Conv2D(1, (3, 3), padding='VALID')(input)
+    model = Model(input, x)
+
+    weights = np.asarray([1 if i % 2 == 0 else -1 for i in range(9)])
+    weights = np.reshape(weights, (3, 3, 1, 1))
+
+    model.layers[-1].set_weights([
+        weights,
+        np.zeros(1)
+    ])
+
+    data = np.asarray([x if x < 8 else -x for x in np.arange(16)])
+    data = data.astype(np.float32)
+    data = np.reshape(data, (1, 4, 4, 1))
+
+    explainer = Conv2DLRP(model.layers[-1], alpha=2, beta=1)
+    R = np.asarray([[1.0, 2.0, 3.0, 4.0]])
+    R = np.reshape(R, (2, 2, 1))
+    explanations = explainer([data, R])
+
+    expected = np.asarray([
+        [0, -1/29+4/20, 4/16-4/34, 12/20],
+        [-4/29+24/41, 10/16-10/34-15/40+40/46, -6/29+24/20+36/41-24/44, -14/34+56/46],
+        [-8/29+48/41, 18/16-18/34-27/40+72/46, -10/29+40/20+60/41-40/44, -22/34+88/46],
+        [-36/40, 78/41-52/44, -42/40+112/46, -60/44]
+    ])
+    expected = np.reshape(expected, (1, 4, 4, 1))
+
+    assert np.allclose(expected, explanations, atol=1e-5), \
+        'Conv2D with alpha=1, beta=0 does not return the correct explanations'

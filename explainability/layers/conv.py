@@ -55,8 +55,8 @@ class ConvLRP(StandardLRPLayer):
 
         zneg = zposneg + znegpos
 
-        Rpos = R / (zpos + 1e-9)
-        Rneg = R / (zneg + 1e-9)
+        Rpos = (R * self.alpha) / (zpos + 1e-9)
+        Rneg = (R * self.beta) / (zneg + 1e-9)
 
         # TODO: Only works for batches of size 1. Should raise error otherwise
 
@@ -69,10 +69,7 @@ class ConvLRP(StandardLRPLayer):
         cpos = apos * cpospos + aneg * cposneg
         cneg = apos * cnegneg + aneg * cnegpos
 
-        Rpos = tf.multiply(tf.cast(self.alpha, tf.float32), cpos)
-        Rneg = tf.multiply(tf.cast(self.beta, tf.float32), cneg)
-
-        return Rpos - Rneg
+        return cpos - cneg
 
 
 class Conv2DLRP(ConvLRP):
