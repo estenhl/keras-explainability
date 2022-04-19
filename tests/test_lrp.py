@@ -44,7 +44,6 @@ def test_non_sequential_model():
         ('LRP with non-sequential model does not return the correct '
          'explanations')
 
-"""
 def test_lrp_negative_layer():
     i = Input((3,))
     x = Dense(3)(i)
@@ -81,6 +80,5 @@ def test_lrp_not_last_layer():
     assert np.array_equal(np.asarray([[0., 0., 3.]]), explanations), \
         ('LRP which does not target the last layer does not return the '
          'correct explanations')
-"""
 
 
