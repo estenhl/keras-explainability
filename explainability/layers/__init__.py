@@ -26,7 +26,7 @@ def get_lrp_layer(layer, *args, **kwargs):
     elif isinstance(layer, AveragePooling3D):
         return AveragePoolingLRP(layer, *args, **kwargs)
     elif isinstance(layer, BatchNormalization):
-        return NoOpLRP(layer, *args, **kwargs)#BatchNormalizationLRP(layer, *args, **kwargs)
+        return NoOpLRP(layer, *args, **kwargs)
     elif isinstance(layer, Conv2D):
         return Conv2DLRP(layer, *args, **kwargs)
     elif isinstance(layer, Conv3D):
