@@ -22,10 +22,16 @@ class DenseLRP(StandardLRPLayer):
 
         pos = tf.where(aw > 0, aw, tf.zeros_like(aw))
         pos_sums = tf.reduce_sum(pos, axis=(0, 1))
-        pos = tf.divide(pos, pos_sums)
-        pos = tf.where(pos_sums != 0, pos, tf.zeros_like(pos))
         neg = tf.where(aw < 0, aw, tf.zeros_like(aw))
         neg_sums = tf.reduce_sum(neg, axis=(0, 1))
+
+        if self.layer.use_bias:
+            pos_sums = tf.add(pos_sums, tf.maximum(0., self.layer.bias))
+            neg_sums = tf.add(neg_sums, tf.minimum(0., self.layer.bias))
+
+        pos = tf.divide(pos, pos_sums)
+        pos = tf.where(pos_sums != 0, pos, tf.zeros_like(pos))
+
         neg = tf.divide(neg, neg_sums)
         neg = tf.where(neg_sums != 0, neg, tf.zeros_like(neg))
 

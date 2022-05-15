@@ -137,7 +137,8 @@ def test_dense_lrp_relu():
             [1, 1, -1],
             [-1, -1, -1],
             [1, -1, 1]
-        ]), np.zeros(3)
+        ]),
+        np.zeros(3)
     ])
     model.layers[2].set_weights([np.reshape(np.arange(1, 4), (3, 1)), np.zeros(1)])
 
@@ -157,7 +158,8 @@ def test_dense_alpha_beta():
             [1, 1, -1],
             [-1, -1, -1],
             [1, -1, 1]
-        ]), np.zeros(3)
+        ]),
+        np.zeros(3)
     ])
     model.layers[2].set_weights([np.reshape(np.arange(1, 4), (3, 1)), np.zeros(1)])
 
@@ -182,7 +184,8 @@ def test_dense_alpha_1_beta_0_model():
             [1, 1, -1],
             [-1, -1, -1],
             [1, -1, 1]
-        ]), np.zeros(3)
+        ]),
+        np.zeros(3)
     ])
     model.layers[2].set_weights([np.reshape(np.arange(1, 4), (3, 1)), np.zeros(1)])
 
@@ -245,3 +248,29 @@ def test_dense_flat():
 
     assert np.allclose(expected, explanations, atol=1e-5), \
         'DenseLRP with flat=True returns the wrong explanations'
+
+
+def test_dense_bias_ab_negative():
+    inputs = Input((4,))
+    x = Dense(1, activation=None)(inputs)
+    model = Model(inputs, x)
+
+    model.layers[1].set_weights([
+        np.asarray([[-1.], [2.], [-3.], [4.]]),
+        np.asarray([4.])
+    ])
+
+    data = np.asarray([[-1., -2., 3., 4.]])
+
+    print(model.predict(data))
+
+    explainer = DenseLRP(model.layers[-1], alpha=2, beta=1)
+    explanations = explainer([data, [[8.]]])
+
+    expected = np.asarray([[16/21., -32/13., -72/13., 256/21]])
+
+    assert np.allclose(expected, explanations, atol=1e-5), \
+        ('Dense layer with bias and alpha=2, beta=1 and negative values in '
+         'both input and weights does not return the correct explanation')
+
+

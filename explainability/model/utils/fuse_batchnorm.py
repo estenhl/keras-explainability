@@ -59,9 +59,6 @@ def _fuse_layers(computational: Union[Dense, Conv2D, Conv3D],
 
 
 def _is_sequential(graph: np.ndarray):
-    print(graph)
-    print(graph[:,1:])
-    print(np.sum(graph[:,1:], axis=0))
     return np.all(np.sum(graph[:,1:], axis=0) == 1)
 
 
