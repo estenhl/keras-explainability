@@ -1,14 +1,16 @@
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Dense
 
+from typing import List
 
-def remove_softmax(model: Model) -> Model:
+
+def remove_activation(model: Model, activations: List[str]):
     prev = model.layers[-2].output
     output = model.layers[-1]
 
     if not isinstance(output, Dense):
         return model
-    if output.activation.__name__ != 'softmax':
+    if output.activation.__name__ not in activations:
         return model
 
     layer = Dense(
@@ -30,3 +32,9 @@ def remove_softmax(model: Model) -> Model:
     model.layers[-1].set_weights(output.get_weights())
 
     return model
+
+def remove_softmax(model: Model) -> Model:
+    return remove_activation(model, activations=['softmax'])
+
+def remove_sigmoid(model: Model) -> Model:
+    return remove_activation(model, activations=['sigmoid'])

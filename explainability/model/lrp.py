@@ -4,7 +4,7 @@ from tensorflow.keras import Model
 
 from typing import Union
 
-from .utils import fuse_batchnorm, remove_softmax
+from .utils import fuse_batchnorm, remove_activation
 from ..layers import get_lrp_layer, StandardLRPLayer
 from ..utils import infer_graph_structure, topological_sort
 from ..utils.strategies import LRPStrategy
@@ -17,7 +17,7 @@ class LayerwiseRelevancePropagator(Model):
                  strategy: LRPStrategy = None, name: str = 'LRP'):
 
         model = Model(model.input, model.layers[layer].output)
-        model = remove_softmax(model)
+        model = remove_activation(model, ['sigmoid', 'softmax'])
         model = fuse_batchnorm(model)
 
         if strategy is not None:

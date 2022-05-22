@@ -1,2 +1,2 @@
 from .fuse_batchnorm import fuse_batchnorm
-from .remove_softmax import remove_softmax
+from .remove_activation import remove_activation, remove_sigmoid, remove_softmax
