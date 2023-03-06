@@ -12,11 +12,13 @@ from ..utils.strategies import LRPStrategy
 
 class LayerwiseRelevancePropagator(Model):
     def __init__(self, model: Model, *, layer: Union[int, str], idx: int,
+                 include_prediction: bool = False,
                  epsilon: float = None, gamma: float = None,
                  alpha: float = None, beta: float = None,
                  strategy: LRPStrategy = None, name: str = 'LRP'):
 
-        model = Model(model.input, model.layers[layer].output)
+        original_output = model.layers[layer].output
+        model = Model(model.input, original_output)
         model = remove_activation(model, ['sigmoid', 'softmax'])
         model = fuse_batchnorm(model)
 
@@ -79,6 +81,9 @@ class LayerwiseRelevancePropagator(Model):
         outputs = [relevances[layer.ref()] for layer in inputs] \
                   if isinstance(inputs, list) else \
                   relevances[inputs.ref()]
+
+        if include_prediction:
+            outputs = [original_output] + outputs
 
         super().__init__(inputs, outputs)
 
