@@ -39,7 +39,7 @@ class ConvLRP(StandardLRPLayer):
                                                  strides=self.layer.strides,
                                                  padding=self.padding)
 
-    def _compute_with_alpha_beta(self, a, w, R) -> tf.Tensor:
+    def _compute_with_alpha_beta(self, a, w, R, bias) -> tf.Tensor:
         apos = tf.maximum(a, 0.)
         wpos = tf.maximum(w, 0.)
         aneg = tf.minimum(a, 0.)

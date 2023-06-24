@@ -74,8 +74,8 @@ class LayerwiseRelevancePropagator(Model):
                 (f'Layer {layer} has {len(inputs)} inputs but '
                  f'{len(relevances)} relevances')
 
-            for i in range(len(inputs)):
-                relevances[inputs[i].ref()] = relevance[i]
+            for j in range(len(inputs)):
+                relevances[inputs[j].ref()] = relevance[j]
 
         inputs = model.inputs
         outputs = [relevances[layer.ref()] for layer in inputs] \

@@ -5,6 +5,10 @@ from tensorflow.keras.layers import Layer
 from typing import List
 
 class LRPLayer(Layer, ABC):
+    def get_weights(self, *args, **kwargs):
+        bias = self.layer.bias if self.layer.use_bias else None
+        return bias, self.layer.weights[0]
+
     def __init__(self, layer: tf.Tensor, name: str = 'lrp', **kwargs):
         super().__init__(trainable=False, name=name)
 
@@ -58,7 +62,7 @@ class StandardLRPLayer(LRPLayer, ABC):
         if self.b:
             a = tf.ones_like(a)
 
-        w = self.layer.weights[0]
+        bias, w = self.get_weights(a)
 
         if self.flat:
             a = tf.ones_like(a)
@@ -68,12 +72,12 @@ class StandardLRPLayer(LRPLayer, ABC):
             w = tf.where(w >= 0, tf.multiply(w, 1 + self.gamma), w)
 
         if self.alpha is not None and self.beta is not None:
-            return self._compute_with_alpha_beta(a, w, R)
+            return self._compute_with_alpha_beta(a, w, R, bias)
         else:
             z = self.forward(a, w)
 
-            if self.layer.use_bias:
-                R = (R * z) / (z + self.layer.bias)
+            if bias is not None:
+                R = (R * z) / (z + bias)
 
             if self.epsilon:
                 epsilon = tf.multiply(self.epsilon, tf.math.sign(z))

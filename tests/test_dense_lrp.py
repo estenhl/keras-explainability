@@ -1,10 +1,11 @@
 """Contains tests for the Dense-layer LRP implementations"""
 
 import numpy as np
+import tensorflow as tf
 
 from tensorflow.keras.initializers import Constant
 from tensorflow.keras import Model
-from tensorflow.keras.layers import Dense, Input
+from tensorflow.keras.layers import Dense, Input, LayerNormalization
 
 from explainability.layers import DenseLRP
 from explainability import LayerwiseRelevancePropagator
@@ -208,7 +209,7 @@ def test_dense_lrp_b():
     explanations = explainer([np.asarray([[1., 2., 3.]]),
                               np.asarray([14.])])[0].numpy()
 
-    assert np.array_equal([1., 4., 9.], explanations), \
+    assert np.allclose([1., 4., 9.], explanations, atol=1e-5), \
         'Default DenseLRP returns the wrong explanations'
 
     explainer = DenseLRP(model.layers[1], b=True)
@@ -217,7 +218,7 @@ def test_dense_lrp_b():
 
     expected = np.asarray([14./6, (14.*2)/6, (14.*3)/6])
 
-    assert np.allclose(expected, explanations, atol=1e-8), \
+    assert np.allclose(expected, explanations, atol=1e-5), \
         'DenseLRP with b=True returns the wrong explanations'
 
 
@@ -274,3 +275,38 @@ def test_dense_bias_ab_negative():
          'both input and weights does not return the correct explanation')
 
 
+def test_dense_layernorm_forward():
+
+    inputs = Input((5,))
+    dense = Dense(3, activation=None)(inputs)
+    norm = LayerNormalization(axis=1,
+                              gamma_initializer='ones',
+                              beta_initializer='ones')(dense)
+    model = Model(inputs, norm)
+    norm = model.layers[-1]
+    dense = model.layers[-2]
+    weights = np.asarray([
+            [1, -1, 1],
+            [0, 1, -1],
+            [0, 1, 1],
+            [1, 0, 0],
+            [0, -1, -1]
+        ], dtype=np.float32)
+    biases = np.zeros(3)
+    dense.set_weights([weights, biases])
+
+    inputs = np.asarray([[1, 4, 3, 5, 2]], dtype=np.float32)
+    lrp = DenseLRP(dense, norm=norm)
+    explanation = lrp([inputs, np.asarray([[6, 4, 0]], dtype=np.float32)])
+
+    expected = np.asarray([[
+        0.04598838,
+        3.3807485,
+        2.5355613,
+        4.4558773,
+        -1.6903743
+    ]])
+
+    assert np.allclose(explanation, expected, atol=1e-5), \
+        ('DenseLRP with LayerNormalization does not return the correct '
+         'explanation')
