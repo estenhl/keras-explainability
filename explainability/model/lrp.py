@@ -1,6 +1,7 @@
 import tensorflow as tf
 
 from tensorflow.keras import Model
+from tensorflow.keras.layers import Dense, LayerNormalization
 
 from typing import Union
 
@@ -51,20 +52,40 @@ class LayerwiseRelevancePropagator(Model):
 
         layers = [model.layers[i] for i in order]
 
-        for i in range(len(layers)):
+        i = 0
+        while i < len(layers):
             layer = layers[i]
-            layer_name = f'{name}/{i}'
-            inputs = layer.input
-            outputs = layer.output
-            R = relevances[outputs.ref()]
+            kwargs = {
+                'name': f'{name}/{i}',
+                'epsilon': epsilon,
+                'gamma': gamma,
+                'alpha': alpha,
+                'beta':beta
+            }
+
+            if isinstance(layer, LayerNormalization):
+                if isinstance(layers[i + 1], Dense):
+                    inputs = layers[i + 1].input
+                    outputs = layer.output
+                    R = relevances[outputs.ref()]
+                    kwargs['norm'] = layer
+                    layer = layers[i + 1]
+                else:
+                    raise NotImplementedError('Unable to handle '
+                                              'LayerNormalization preceded by '
+                                              'something other than a Dense '
+                                              'layer.')
+                i += 2
+            else:
+                inputs = layer.input
+                outputs = layer.output
+                R = relevances[outputs.ref()]
+                i += 1
+
             relevance = get_lrp_layer(
                 layer,
-                epsilon=epsilon,
-                gamma=gamma,
-                alpha=alpha,
-                beta=beta,
-                name=layer_name
-            )([layer.input, R])
+                **kwargs
+            )([inputs, R])
 
             if not isinstance(relevance, list):
                 inputs = [inputs]
