@@ -8,7 +8,7 @@ setup(
     packages=["explainability"],
     url="https://github.com/estenhl/keras-explainability",
     install_requires=[
-        "pytest"
+        "pytest",
         "tensorflow"
     ]
 )
