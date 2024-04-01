@@ -310,3 +310,24 @@ def test_dense_layernorm_forward():
     assert np.allclose(explanation, expected, atol=1e-5), \
         ('DenseLRP with LayerNormalization does not return the correct '
          'explanation')
+
+def test_dense_epsilon_with_adjusted_epsilon():
+    input = Input((2,))
+    layer = Dense(3, bias_initializer='zeros',
+                  kernel_initializer=Constant(value=[[1., -2., 3.],
+                                                     [2., 3., -4.]]))
+    model = Model(input, layer(input))
+    inputs = np.asarray([[5.0, 7.0]])
+    print(model(inputs))
+
+    relevances = np.asarray([[19., 11., -13.]], dtype=np.float32)
+    l = DenseLRP(model.layers[1], epsilon=2.0, adjust_epsilon=True)([input, relevances])
+
+    explainer = Model(input, l)
+    explanations = explainer.predict(np.asarray([[5.0, 7.0]],
+                                                dtype=np.float32))
+    expected = np.asarray([[10.114474, 6.8855257]], dtype=np.float32)
+
+    assert np.allclose(expected, explanations), \
+        ('DenseLRP with adjusted epsilon does not return the correct '
+         'explanations')

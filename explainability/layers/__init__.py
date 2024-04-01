@@ -13,7 +13,7 @@ from .dense import DenseLRP
 from .layer import StandardLRPLayer
 from .noop import NoOpLRP
 from .normalization import BatchNormalizationLRP
-from .pooling import AveragePoolingLRP, MaxPoolingLRP
+from .pooling import AveragePoolingLRP, MaxPoolingLRP, PoolingLRPLayer
 from .reshape import ReshapeLRP
 
 def get_lrp_layer(layer, *args, **kwargs):

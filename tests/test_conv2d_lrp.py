@@ -196,8 +196,6 @@ def test_conv2d_bias_ab_negative():
         [[7.], [-8.], [9.]]
     ]])
 
-    print(model.predict(data))
-
     explainer = Conv2DLRP(model.layers[-1], alpha=2, beta=1)
     explanations = explainer([data, np.asarray([[145.]])])
 
@@ -211,3 +209,53 @@ def test_conv2d_bias_ab_negative():
     assert np.allclose(expected, explanations, atol=1e-5), \
         ('Conv2DLRP with alpha=2, beta=1 and negative values does not return '
          'the correct explanations when the layer has bias')
+
+def test_conv2d_flat():
+    R = np.asarray([[
+        [[1, -1], [2, 1], [3, 2]],
+        [[4, -3], [5, 5], [6, 8]],
+        [[7, 13], [8, -21], [9, 34]]
+    ]], dtype=np.float32)
+    print(R.shape)
+
+    i = Input((3, 3, 1))
+    c = Conv2D(2, (3, 3), padding='SAME', activation=None)(i)
+    inputs = np.reshape(np.arange(9, dtype=np.float32), (1, 3, 3, 1))
+    model = Model(i, c)
+
+    lrp = Conv2DLRP(model.layers[1], flat=True)
+    explanation = lrp([inputs, R])
+
+    expected = np.asarray([[
+        [[1.7777779], [5.361111], [5.1944447]],
+        [[4.611111], [18.944445], [13.777779]],
+        [[4.1111116], [17.194445], [12.027778]]
+    ]])
+
+    assert np.allclose(explanation, expected, atol=1e-5), \
+        'Conv2DLRP with flat=True does not provide the correct explanation'
+
+def test_conv2d_flat_with_bias():
+    R = np.asarray([[
+        [[1, -1], [2, 1], [3, 2]],
+        [[4, -3], [5, 5], [6, 8]],
+        [[7, 13], [8, -21], [9, 34]]
+    ]], dtype=np.float32)
+    print(R.shape)
+
+    i = Input((3, 3, 1))
+    c = Conv2D(2, (3, 3), bias_initializer='ones', padding='SAME', activation=None)(i)
+    inputs = np.reshape(np.arange(9, dtype=np.float32), (1, 3, 3, 1))
+    model = Model(i, c)
+
+    lrp = Conv2DLRP(model.layers[1], flat=True, ignore_bias=True)
+    explanation = lrp([inputs, R])
+
+    expected = np.asarray([[
+        [[1.7777779], [5.361111], [5.1944447]],
+        [[4.611111], [18.944445], [13.777779]],
+        [[4.1111116], [17.194445], [12.027778]]
+    ]])
+
+    assert np.allclose(explanation, expected, atol=1e-5), \
+        'Conv2DLRP with flat=True does not provide the correct explanation'

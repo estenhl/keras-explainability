@@ -25,7 +25,8 @@ class StandardLRPLayer(LRPLayer, ABC):
 
     def __init__(self, layer: tf.Tensor, *, epsilon: float = None,
                  gamma: float = None, alpha: float = None, beta: float = None,
-                 b: bool = False, flat: bool = False, name: str = 'dense_lrp'):
+                 b: bool = False, flat: bool = False, ignore_bias: bool = False,
+                 adjust_epsilon: bool = False, name: str = 'dense_lrp'):
         super().__init__(layer, name=name)
 
         if epsilon is not None:
@@ -52,12 +53,15 @@ class StandardLRPLayer(LRPLayer, ABC):
         self.beta = beta
         self.b = b
         self.flat = flat
+        self.ignore_bias = ignore_bias
+        self.adjust_epsilon = adjust_epsilon
 
     def compute_output_shape(self, input_shape):
         return self.layer.input_shape
 
     def call(self, inputs: List[tf.Tensor]) -> tf.Tensor:
         a, R = inputs
+        R_in = R
 
         if self.b:
             a = tf.ones_like(a)
@@ -76,7 +80,7 @@ class StandardLRPLayer(LRPLayer, ABC):
         else:
             z = self.forward(a, w)
 
-            if bias is not None:
+            if bias is not None and not self.ignore_bias:
                 R = (R * z) / (z + bias)
 
             if self.epsilon:
@@ -88,5 +92,10 @@ class StandardLRPLayer(LRPLayer, ABC):
 
             c = self.backward(w, s)
             R = tf.multiply(a, c)
+
+            # Ensures that the amount of relevance stays fixed between layers
+            # even with epsilon
+            if self.epsilon and self.adjust_epsilon:
+                R = R * tf.reduce_sum(R_in) / tf.reduce_sum(R)
 
         return R

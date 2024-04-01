@@ -6,7 +6,7 @@ from tensorflow.keras.layers import Dense, LayerNormalization
 from typing import Union
 
 from .utils import fuse_batchnorm, remove_activation
-from ..layers import get_lrp_layer, StandardLRPLayer
+from ..layers import get_lrp_layer, PoolingLRPLayer, StandardLRPLayer
 from ..utils import infer_graph_structure, topological_sort
 from ..utils.strategies import LRPStrategy
 
@@ -108,26 +108,41 @@ class LayerwiseRelevancePropagator(Model):
 
         super().__init__(inputs, outputs)
 
-        standard_lrp_layers = []
-
-        for i in range(len(self.layers)):
-            if isinstance(self.layers[i], StandardLRPLayer):
-                standard_lrp_layers.append(self.layers[i])
-
         if strategy is not None:
-            assert len(strategy.layers) == len(standard_lrp_layers), \
-                 ('Unable to instantiate LRP with strategy that does not have '
-                 'a configuration for each standard LRP layer')
+            standard_lrp_layers = []
+            pooling_lrp_layers = []
 
-            configurations = strategy.layers[::-1]
+            for i in range(len(self.layers)):
+                if isinstance(self.layers[i], StandardLRPLayer):
+                    standard_lrp_layers.append(self.layers[i])
+                elif isinstance(self.layers[i], PoolingLRPLayer):
+                    pooling_lrp_layers.append(self.layers[i])
 
-            for i in range(len(configurations)):
-                for variable in configurations[i]:
-                    assert hasattr(standard_lrp_layers[i], variable), \
-                        ('LRPStrategy contains invalid configuration variable '
-                        f'{variable} for layer '
-                        f'{standard_lrp_layers[i].__class__.__name__}')
-                    setattr(standard_lrp_layers[i], variable,
-                            configurations[i][variable])
+            if strategy.layers is not None:
+                assert len(strategy.layers) == len(standard_lrp_layers), \
+                    ('Unable to instantiate LRP with strategy that does not have '
+                    'a configuration for each standard LRP layer')
+
+                configurations = strategy.layers[::-1]
+
+                for i in range(len(configurations)):
+                    for variable in configurations[i]:
+                        assert hasattr(standard_lrp_layers[i], variable), \
+                            ('LRPStrategy contains invalid configuration variable '
+                            f'{variable} for layer '
+                            f'{standard_lrp_layers[i].__class__.__name__}')
+                        setattr(standard_lrp_layers[i], variable,
+                                configurations[i][variable])
+
+            if strategy.pooling is not None:
+                assert len(strategy.pooling) == len(pooling_lrp_layers), \
+                    ('Unable to instantiate LRP with strategy that does not have '
+                    'a configuration for each standard LRP layer')
+
+                configurations = strategy.pooling[::-1]
+
+                for i in range(len(configurations)):
+                    pooling_lrp_layers[i].strategy = configurations[i]['strategy']
 
 LRP = LayerwiseRelevancePropagator
+

@@ -19,4 +19,5 @@ class ReLULRP(LRPLayer):
     def call(self, inputs: List[tf.Tensor]) -> tf.Tensor:
         a, R = inputs
 
-        return tf.where(a > 0, R, tf.zeros_like(R), name=self.name)
+        #return tf.where(a > 0, R, tf.zeros_like(R), name=self.name)
+        return R
