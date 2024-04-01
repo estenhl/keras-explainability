@@ -20,6 +20,12 @@ class PoolingLRPLayer(LRPLayer, ABC):
         REDISTRIBUTE = 'redistribute'
         FLAT = 'flat'
 
+    def _is_3d_pooling_layer(self) -> bool:
+        layers = (MaxPooling3D, GlobalMaxPooling3D, AveragePooling3D,
+                  GlobalAveragePooling3D)
+
+        return isinstance(self.layer, layers)
+
     @property
     def strategy(self) -> Strategy:
         return self._strategy
@@ -93,7 +99,7 @@ class PoolingLRPLayer(LRPLayer, ABC):
                                              AveragePooling3D)) \
                   else 'VALID'
 
-        if isinstance(self.layer, (MaxPooling3D, GlobalMaxPooling3D)):
+        if self._is_3d_pooling_layer():
             c = AvgPool3DGrad(orig_input_shape=input_shape,
                              grad=s,
                              ksize=ksize,
