@@ -1,8 +1,0 @@
-Metadata-Version: 2.1
-Name: keras-explainability
-Version: 1.0.0
-Home-page: https://github.com/estenhl/keras-explainability
-Author: Esten Høyland Leonardsen
-Author-email: estenleonardsen@gmail.com
-Requires-Dist: pytest
-Requires-Dist: tensorflow
