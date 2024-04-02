@@ -24,7 +24,7 @@ def remove_activation(model: Model, activations: List[str]):
         activity_regularizer=output.kernel_regularizer,
         kernel_constraint=output.kernel_constraint,
         bias_constraint=output.bias_constraint,
-        name=f'{output.name}_without_softmax'
+        name=f'{output.name}_without_activation'
     )(prev)
 
     model = Model(model.input, layer)

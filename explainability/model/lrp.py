@@ -23,6 +23,10 @@ class LayerwiseRelevancePropagator(Model):
         model = remove_activation(model, ['sigmoid', 'softmax'])
         model = fuse_batchnorm(model)
 
+        if idx < 0:
+            raise NotImplementedError('Negative node indexes (e.g. idx) not '
+                                      'implemented')
+
         if strategy is not None:
             assert epsilon is None, \
                 'Unable to instantiate LRP with both epsilon and strategy'
