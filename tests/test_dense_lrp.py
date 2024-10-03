@@ -250,7 +250,6 @@ def test_dense_flat():
     assert np.allclose(expected, explanations, atol=1e-5), \
         'DenseLRP with flat=True returns the wrong explanations'
 
-
 def test_dense_bias_ab_negative():
     inputs = Input((4,))
     x = Dense(1, activation=None)(inputs)
@@ -263,17 +262,14 @@ def test_dense_bias_ab_negative():
 
     data = np.asarray([[-1., -2., 3., 4.]])
 
-    print(model.predict(data))
-
     explainer = DenseLRP(model.layers[-1], alpha=2, beta=1)
-    explanations = explainer([data, [[8.]]])
+    explanations = explainer([data, tf.constant([[8.]])])
 
     expected = np.asarray([[16/21., -32/13., -72/13., 256/21]])
 
     assert np.allclose(expected, explanations, atol=1e-5), \
         ('Dense layer with bias and alpha=2, beta=1 and negative values in '
          'both input and weights does not return the correct explanation')
-
 
 def test_dense_layernorm_forward():
 

@@ -17,6 +17,8 @@ class RestructuredLayerwiseRelevancePropagator(Model):
                  alpha: float = None, beta: float = None,
                  strategy: LRPStrategy = None, threshold: bool = False,
                  name: str = 'LRP'):
+        raise NotImplementedError('Gotta look this one over before anyone '
+                                  'uses it')
         intermediate_layers = model.layers[bottleneck + 1:layer]
 
         for l in intermediate_layers:
@@ -45,63 +47,67 @@ class RestructuredLayerwiseRelevancePropagator(Model):
              'with a built-in activation')
 
         z = z.output
-        a = Input((z.shape[-1]), name=f'{name}/a')
+        a = Input((z.shape[-1],), name=f'{name}_a')
 
-        first_component = Subtract(name=f'{name}/z-a')([z, a])
+        first_component = Subtract(name=f'{name}_z-a')([z, a])
         first_component = Activation(
             'relu',
-             name=f'{name}/z-a/relu'
+             name=f'{name}_z-a_relu'
         )(first_component)
-        second_component_zeros = tf.zeros_like(z, name=f'{name}/-z/zeros')
+        second_component_zeros = tf.zeros_like(z, name=f'{name}_-z_zeros')
         second_component = Subtract(
-            name=f'{name}/-z'
+            name=f'{name}_-z'
         )([second_component_zeros, z])
-        third_component = Add(name=f'{name}/a-z')([second_component, a])
+        third_component = Add(name=f'{name}_a-z')([second_component, a])
         second_component = Activation(
             'relu',
-            name=f'{name}/-z/relu'
+            name=f'{name}_-z_relu'
         )(second_component)
         third_component = Activation(
             'relu',
-            name=f'{name}/a-z/relu'
+            name=f'{name}_a-z_relu'
         )(third_component)
 
         restructured = Subtract(
-            name=f'{name}/restructuring/second_component'
+            name=f'{name}_restructuring_second_component'
         )([second_component, third_component])
         restructured = Add(
-            name=f'{name}/restructuring'
+            name=f'{name}_restructuring'
         )([first_component, restructured])
 
         model_inputs = [model.input, a]
 
         if threshold:
-            t = Input((z.shape[-1]), name=f'{name}/threshold')
-            threshold_zeros = tf.zeros_like(t, name=f'{name}/threshold/zeros')
+            t = Input((z.shape[-1]), name=f'{name}_threshold')
+            threshold_zeros = tf.zeros_like(t, name=f'{name}_threshold_zeros')
             absolute = tf.abs(restructured,
-                              name=f'{name}/restructuring/absolute')
+                              name=f'{name}_restructuring_absolute')
             restructured = tf.where(absolute > t, restructured,
                                     threshold_zeros,
-                                    name=f'{name}/restructuring/thresholded')
+                                    name=f'{name}_restructuring_thresholded')
             model_inputs.append(t)
 
         output = Dense(
             model.layers[layer].output.shape[-1],
-            name=f'{name}/output'
+            name=f'{name}_output'
         )(restructured)
 
         restructured = Model(model_inputs, output)
         restructured.layers[-1].set_weights(model.layers[layer].get_weights())
 
-        indexes = tf.range(output.shape[-1], name=f'{name}/output/indexes')
+        indexes = tf.range(output.shape[-1], name=f'{name}_output_indexes')
         mask = indexes == idx
-        zeros = tf.zeros_like(output, name=f'{name}/output/zeros')
-        masked_output =  tf.where(mask, output, zeros,
-                                  name=f'{name}/output/masked')
+        zeros = tf.zeros_like(output, name=f'{name}_output_zeros')
+
+        masked_output = Lambda(
+            lambda params: tf.where(*params, name=f'{name}_output_masked'),
+            name=f'{name}_output_mask_lambda',
+            output_shape=output_shape
+        )([mask, output, zeros])
 
         output_lrp = DenseLRP(
             restructured.layers[-1],
-            name=f'{name}/output/lrp'
+            name=f'{name}_output_lrp'
         )([restructured.layers[-1].input, masked_output])
 
         if len(output.shape) != 2:

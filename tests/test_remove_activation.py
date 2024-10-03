@@ -63,7 +63,7 @@ def test_remove_softmax_implicit():
         'Model returns the wrong predictions after remove_activation'
 
 def test_remove_sigmoid():
-    input = Input(3)
+    input = Input((3,))
     output = Dense(1, activation='sigmoid')(input)
     model = Model(input, output)
 
@@ -80,7 +80,7 @@ def test_remove_sigmoid():
         'remove_sigmoid does not remove sigmoid'
 
 def test_remove_sigmoid_implicit():
-    input = Input(3)
+    input = Input((3,))
     output = Dense(1, activation='sigmoid')(input)
     model = Model(input, output)
 
@@ -106,7 +106,7 @@ def test_remove_softmax_model():
         'LRP does not automatically remove softmax activation'
 
 def test_remove_sigmoid_model():
-    input = Input(3)
+    input = Input((3,))
     output = Dense(1, activation='sigmoid')(input)
     model = Model(input, output)
     lrp = LRP(model, layer=-1, idx=0)

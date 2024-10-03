@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 from tensorflow.keras import Model
-from tensorflow.keras.layers import Dense, LayerNormalization
+from tensorflow.keras.layers import InputLayer, Dense, Lambda, LayerNormalization
 
 from typing import Union
 
@@ -41,17 +41,23 @@ class LayerwiseRelevancePropagator(Model):
         order = topological_sort(dependencies)
         order = order[::-1]
         output = model.output
+        output_shape = (1,) + output.shape[1:]
 
         if len(output.shape) != 2:
             raise NotImplementedError('Unable to handle non-flat target layers')
 
         indexes = tf.range(output.shape[-1], name=f'{name}/output/indexes')
         mask = indexes == idx
-        zeros = tf.zeros_like(output, name=f'{name}/output/zeros')
-        masked_output =  tf.where(mask, output, zeros,
-                                  name=f'{name}/output/masked')
+        zeros = tf.zeros(output_shape, name=f'{name}/output/zeros')
+
+        masked_output = Lambda(
+            lambda params: tf.where(*params, name=f'{name}_output_masked'),
+            name=f'{name}_output_mask_lambda',
+            output_shape=output_shape
+        )([mask, output, zeros])
+
         relevances = {
-            output.ref(): masked_output
+            output.name: masked_output
         }
 
         layers = [model.layers[i] for i in order]
@@ -60,7 +66,7 @@ class LayerwiseRelevancePropagator(Model):
         while i < len(layers):
             layer = layers[i]
             kwargs = {
-                'name': f'{name}/{i}',
+                'name': f'{name}_{i}',
                 'epsilon': epsilon,
                 'gamma': gamma,
                 'alpha': alpha,
@@ -71,7 +77,7 @@ class LayerwiseRelevancePropagator(Model):
                 if isinstance(layers[i + 1], Dense):
                     inputs = layers[i + 1].input
                     outputs = layer.output
-                    R = relevances[outputs.ref()]
+                    R = relevances[outputs.name]
                     kwargs['norm'] = layer
                     layer = layers[i + 1]
                 else:
@@ -83,9 +89,8 @@ class LayerwiseRelevancePropagator(Model):
             else:
                 inputs = layer.input
                 outputs = layer.output
-                R = relevances[outputs.ref()]
+                R = relevances[outputs.name]
                 i += 1
-
             relevance = get_lrp_layer(
                 layer,
                 **kwargs
@@ -100,12 +105,23 @@ class LayerwiseRelevancePropagator(Model):
                  f'{len(relevances)} relevances')
 
             for j in range(len(inputs)):
-                relevances[inputs[j].ref()] = relevance[j]
+                if isinstance(inputs[j], list):
+                    if len(inputs[j]) != 0:
+                        raise ValueError('Inputs is a nested list where the '
+                                         'inner list is not empty')
+                    if not isinstance(layer, InputLayer):
+                        raise ValueError('Inputs is a nested list but layer '
+                                         f'is not an InputLayer ({layer})')
+                    name = layer.name
+                else:
+                    name = inputs[j].name
+
+                relevances[name] = relevance[j]
 
         inputs = model.inputs
-        outputs = [relevances[layer.ref()] for layer in inputs] \
+        outputs = [relevances[layer.name] for layer in inputs] \
                   if isinstance(inputs, list) else \
-                  relevances[inputs.ref()]
+                  relevances[inputs.name]
 
         if include_prediction:
             outputs = [original_output] + outputs

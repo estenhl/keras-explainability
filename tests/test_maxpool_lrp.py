@@ -79,7 +79,7 @@ def test_global_maxpool_2d_lrp():
 
 def test_maxpool_3d_lrp():
     input = Input((2, 2, 2, 2))
-    layer = MaxPooling3D((2, 2, 2), padding='VALID')(input)
+    layer = MaxPooling3D((2, 2, 2), padding='valid')(input)
     model = Model(input, layer)
 
     values = np.asarray([[

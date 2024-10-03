@@ -34,6 +34,9 @@ class PoolingLRPLayer(LRPLayer, ABC):
     def strategy(self, strategy):
         self._strategy = PoolingLRPLayer.Strategy(strategy)
 
+    def compute_output_shape(self, input_shape):
+        return self.layer.input.shape
+
     def __init__(self, layer, *args, strategy: str, batch_size: int = 1,
                  name: str = 'pooling_lrp', **kwargs):
         super().__init__(layer, *args, name=name, **kwargs)
@@ -45,8 +48,8 @@ class PoolingLRPLayer(LRPLayer, ABC):
         forward = tf.nn.max_pool(a, ksize=ksize, strides=strides,
                                  padding=padding, name=f'{self.name}/forward')
 
-        ksize = (1,) + ksize + (1,)
-        strides = (1,) + strides + (1,)
+        ksize = [1] + ksize + [1]
+        strides = [1] + strides + [1]
 
         # Global layer has squeezed away spatial dimensions
         if len(R.shape) != len(a.shape):
@@ -57,13 +60,19 @@ class PoolingLRPLayer(LRPLayer, ABC):
             R = tf.reshape(R, dims, name=f'{self.name}/R/reshape')
 
         if len(a.shape) == 4:
-            gradients = MaxPoolGradV2(orig_input=a, orig_output=forward,
-                                      grad=R, ksize=ksize, strides=strides,
+            gradients = MaxPoolGradV2(orig_input=a,
+                                      orig_output=forward,
+                                      grad=R,
+                                      ksize=ksize,
+                                      strides=strides,
                                       padding=padding, data_format='NHWC')
         elif isinstance(self.layer, GlobalMaxPooling3D):
-            gradients = MaxPool3DGrad(orig_input=a, orig_output=forward,
-                                      grad=R, ksize=ksize.as_list(),
-                                      strides=strides, padding=padding,
+            gradients = MaxPool3DGrad(orig_input=a,
+                                      orig_output=forward,
+                                      grad=R,
+                                      ksize=ksize,
+                                      strides=strides,
+                                      padding=padding,
                                       data_format='NDHWC')
         elif isinstance(self.layer, MaxPooling3D):
             gradients = MaxPool3DGrad(orig_input=a, orig_output=forward,
@@ -82,22 +91,10 @@ class PoolingLRPLayer(LRPLayer, ABC):
                               name=f'{self.name}/forward')
         s = R / z
 
-        pool_size = self.layer.pool_size \
-                    if isinstance(self.layer, (MaxPooling2D,
-                                               MaxPooling3D)) \
-                    else tuple(a.shape[1:-1].as_list())
-        strides = self.layer.strides \
-                  if isinstance(self.layer, (MaxPooling2D,
-                                             MaxPooling3D)) \
-                  else tuple(a.shape[1:-1].as_list())
-
         input_shape = (self.batch_size,) + a.shape[1:]
-        ksize = (1,) + pool_size + (1,)
-        strides = (1,) + strides + (1,)
-        padding = self.layer.padding.upper() \
-                  if isinstance(self.layer, (AveragePooling2D,
-                                             AveragePooling3D)) \
-                  else 'VALID'
+        ksize = [1] + ksize + [1]
+        strides = [1] + strides + [1]
+        padding = padding
 
         if self._is_3d_pooling_layer():
             c = AvgPool3DGrad(orig_input_shape=input_shape,
@@ -107,6 +104,7 @@ class PoolingLRPLayer(LRPLayer, ABC):
                              padding=padding,
                              name=f'{self.name}/backward')
         else:
+
             c = AvgPoolGrad(orig_input_shape=input_shape,
                             grad=s,
                             ksize=ksize,
@@ -121,15 +119,15 @@ class PoolingLRPLayer(LRPLayer, ABC):
     def call(self, inputs: List[tf.Tensor]) -> tf.Tensor:
         a, R = inputs
 
-        ksize = self.layer.pool_size \
-                if isinstance(self.layer, (MaxPooling2D, MaxPooling3D)) \
-                else a.shape[1:-1]
-        strides = self.layer.strides \
-                  if isinstance(self.layer, (MaxPooling2D, MaxPooling3D)) \
-                  else tuple([1] * (len(a.shape) - 2))
-        padding = self.layer.padding.upper() \
-                  if isinstance(self.layer, (MaxPooling2D, MaxPooling3D)) \
-                  else 'VALID'
+        local = isinstance(self.layer, (AveragePooling2D, MaxPooling2D,
+                                        AveragePooling3D, MaxPooling3D))
+
+        ksize = list(self.layer.pool_size) if local \
+                else a.shape[1:-1].as_list()
+        strides = list(self.layer.strides) if local \
+                  else list([1] * (len(a.shape) - 2))
+        padding = self.layer.padding.upper() if local else 'VALID'
+
 
         if self.strategy == MaxPoolingLRP.Strategy.WINNER_TAKES_ALL:
             return self._winner_takes_all(a, R, ksize=ksize, strides=strides,

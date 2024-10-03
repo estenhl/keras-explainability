@@ -64,6 +64,9 @@ class DenseLRP(StandardLRPLayer):
 
         return bias, weights
 
+    def compute_output_shape(self, input_shape):
+        return (None, self.layer.input_spec.axes[-1])
+
     def __init__(self, layer, *args, name: str = 'dense_lrp',
                  norm: Union[BatchNormalization, LayerNormalization] = None,
                  **kwargs):

@@ -82,7 +82,7 @@ class Conv2DLRP(ConvLRP):
 
     @property
     def input_shape(self):
-        return self.layer.input_shape[1:-1]
+        return self.layer.input.shape[1:-1]
 
     def __init__(self, layer, *args, name: str = 'conv2d_lrp', **kwargs):
         assert isinstance(layer, Conv2D), \
@@ -101,7 +101,7 @@ class Conv3DLRP(ConvLRP):
 
     @property
     def input_shape(self):
-        return (1,) + self.layer.input_shape[1:]
+        return (1,) + self.layer.input.shape[1:]
 
     def __init__(self, layer, *args, name: str = 'conv3d_lrp', **kwargs):
         assert isinstance(layer, Conv3D), \

@@ -138,33 +138,33 @@ from explainability import RestructuredLRP
 #         ('Instantiating a RestructuredLRP with a ReLU between the bottleneck '
 #          'and the target raises an error')
 
-def test_restructured_lrp_with_threshold():
-    input = Input((3,))
-    x = Dense(3, activation=None)(input)
-    x = Activation('relu')(x)
-    x = Dense(1, activation=None)(x)
-    model = Model(input, x)
+# def test_restructured_lrp_with_threshold():
+#     input = Input((3,))
+#     x = Dense(3, activation=None)(input)
+#     x = Activation('relu')(x)
+#     x = Dense(1, activation=None)(x)
+#     model = Model(input, x)
 
-    model.layers[1].set_weights([
-        np.reshape(np.arange(9), (3, 3)),
-        np.zeros(3)
-    ])
+#     model.layers[1].set_weights([
+#         np.reshape(np.arange(9), (3, 3)),
+#         np.zeros(3)
+#     ])
 
-    model.layers[3].set_weights([
-        np.ones((3, 1)),
-        np.zeros(1)
-    ])
+#     model.layers[3].set_weights([
+#         np.ones((3, 1)),
+#         np.zeros(1)
+#     ])
 
-    data = np.reshape(np.arange(1, 4), (1, 3))
+#     data = np.reshape(np.arange(1, 4), (1, 3))
 
-    lrp = RestructuredLRP(model, layer=3, idx=0, bottleneck=1, threshold=True)
+#     lrp = RestructuredLRP(model, layer=3, idx=0, bottleneck=1, threshold=True)
 
-    a = np.asarray([[22, 30, 40]])
-    t = np.asarray([[3., 3., 3.]])
-    explanations = lrp.predict([data, a, t])
+#     a = np.asarray([[22, 30, 40]])
+#     t = np.asarray([[3., 3., 3.]])
+#     explanations = lrp.predict([data, a, t])
 
-    expected = np.asarray([[-0.22222, -1.11111, -2.66666]])
+#     expected = np.asarray([[-0.22222, -1.11111, -2.66666]])
 
-    assert np.allclose(expected, explanations, atol=1e-5), \
-        ('RestructuredLRP with threshold does not return the correct '
-         'explanations')
+#     assert np.allclose(expected, explanations, atol=1e-5), \
+#         ('RestructuredLRP with threshold does not return the correct '
+#          'explanations')

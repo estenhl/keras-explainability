@@ -7,9 +7,9 @@ from typing import List
 
 def _is_neighbour(outputs: List[tf.Tensor], inputs: List[tf.Tensor]) -> bool:
     outputs = outputs if isinstance(outputs, list) else [outputs]
-    outputs = [output.ref() for output in outputs]
+    outputs = [output.name for output in outputs]
     inputs = inputs if isinstance(inputs, list) else [inputs]
-    inputs = [input.ref() for input in inputs]
+    inputs = [input.name for input in inputs]
 
     return len(set(outputs)& set(inputs)) > 0
 

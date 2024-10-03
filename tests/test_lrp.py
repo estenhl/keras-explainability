@@ -127,11 +127,13 @@ def test_lrp_layer_normalization():
         np.zeros(1)
     ])
 
-    inputs = np.asarray([[1, 2, 3]])
+    inputs = tf.constant([[1, 2, 3]])
 
     prev = inputs
-    outputs = []
-    for i in range(len(model.layers)):
+    outputs = [None] # Adds a dummy to account for the input layer
+
+    # The input layer is skipped in the iteration
+    for i in range(1, len(model.layers)):
         prev = model.layers[i](prev)
         outputs.append(prev)
 
@@ -172,6 +174,9 @@ def test_lrp_layer_normalization():
         weights[2],
         np.zeros(1)
     ])
+
+    print(model.predict(inputs))
+    print(modified_model.predict(inputs))
 
     assert np.allclose(model.predict(inputs),
                        modified_model.predict(inputs), atol=1e-3), \

@@ -57,7 +57,7 @@ class StandardLRPLayer(LRPLayer, ABC):
         self.adjust_epsilon = adjust_epsilon
 
     def compute_output_shape(self, input_shape):
-        return self.layer.input_shape
+        return self.layer.input.shape
 
     def call(self, inputs: List[tf.Tensor]) -> tf.Tensor:
         a, R = inputs

@@ -1,6 +1,7 @@
 """Contains tests for the Conv2D-layer LRP implementations"""
 
 import numpy as np
+import tensorflow as tf
 
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Conv2D, Input
@@ -164,7 +165,7 @@ def test_conv2d_bias():
     data = np.reshape(np.arange(1, 10).astype(np.float32), (1, 3, 3, 1))
 
     explainer = Conv2DLRP(model.layers[-1])
-    explanations = explainer([data, [[385.]]])
+    explanations = explainer([data, tf.constant([[385.]])])
 
     expected = np.asarray([[
         [[1.], [4.], [9.]],
